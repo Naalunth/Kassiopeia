@@ -12,7 +12,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	freopen("CONOUT$", "w", stderr);
 	freopen("CONIN$", "r", stdin);
 
-	Kassiopeia::Kassiopeia k;
+	Kassiopeia::Kassiopeia k{};
 	k.run();
 	return 0;
 }
