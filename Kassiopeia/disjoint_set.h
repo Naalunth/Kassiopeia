@@ -4,7 +4,7 @@
 
 /*
 This is an implementation of the disjoint-set data structure according to https://en.wikipedia.org/wiki/Disjoint-set_data_structure.
-T must be equal-comparable.
+T must be equal-comparable and copy-constructible.
 */
 template<typename T>
 class disjoint_set
@@ -22,10 +22,13 @@ public:
 	disjoint_set() {}
 	~disjoint_set() {}
 
-	void add(const T& elem)
+	void insert(const T& elem)
 	{
-		set_node new_node{ elem, size_t{0u} };
-		nodes[elem] = new_node;
+		if (nodes.find(elem) == nodes.end())
+		{
+			set_node new_node{ elem, size_t{0u} };
+			nodes[elem] = new_node;
+		}
 	}
 
 	T find(const T& node)
@@ -51,5 +54,5 @@ public:
 			nodes[a_root].rank++;
 		}
 	}
-	
+
 };

@@ -129,6 +129,7 @@
     <ClCompile Include="Entry.cpp" />
     <ClCompile Include="Kassiopeia.cpp" />
     <ClCompile Include="Map.cpp" />
+    <ClCompile Include="util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="disjoint_set.h" />

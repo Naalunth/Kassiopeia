@@ -45,7 +45,8 @@ void Kassiopeia::Kassiopeia::run()
 	auto mapLoadedState = [&]()
 	{
 		cout << "\n"
-			<< "1: Show number of regions\n"
+			<< "1: Print Map\n"
+			<< "2: Show number of regions\n"
 			<< "0: Back\n"
 			<< "> ";
 		int input;
@@ -53,6 +54,10 @@ void Kassiopeia::Kassiopeia::run()
 		switch (input)
 		{
 		case 1:
+			map.PrintMap();
+			cout << std::endl;
+			break;
+		case 2:
 			cout << "Number of regions: " << map.numberOfRegions() << std::endl;
 			break;
 		case 0:
