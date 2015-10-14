@@ -47,10 +47,12 @@ void Kassiopeia::Kassiopeia::run()
 		cout << "\n"
 			<< "1: Print Map\n"
 			<< "2: Show number of regions\n"
+			<< "3: Show filling path\n"
 			<< "0: Back\n"
 			<< "> ";
 		int input;
 		cin >> input;
+		Map::path_result_type tmp_path;
 		switch (input)
 		{
 		case 1:
@@ -60,6 +62,16 @@ void Kassiopeia::Kassiopeia::run()
 		case 2:
 			cout << "Number of regions: " << map.numberOfRegions() << std::endl;
 			break;
+		case 3:
+			tmp_path = map.FindFillingPath();
+			if (tmp_path.first)
+				if (tmp_path.second == "")
+					cout << "No path needed." << std::endl;
+				else
+					cout << "Path: " << tmp_path.second << std::endl;
+			else
+				cout << "No path found" << std::endl;
+			break;
 		case 0:
 			transitionState(MAIN);
 			break;
@@ -67,7 +79,7 @@ void Kassiopeia::Kassiopeia::run()
 	};
 
 	bool running = true;
-	
+
 	while (running)
 	{
 		switch (currentState)
@@ -101,7 +113,6 @@ void Kassiopeia::Kassiopeia::transitionState(State next)
 				<< "> ";
 			std::cout.flush();
 			std::string input;
-			std::cin.clear();
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			std::getline(std::cin, input);
 			try {

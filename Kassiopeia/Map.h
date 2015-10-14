@@ -19,15 +19,22 @@ namespace Kassiopeia
 			uint8_t isAlreadyVisited : 1;
 			uint8_t internal_isPath : 1;
 			uint8_t internal_isDeadEnd : 1;
+
+			MapData() = default;
+			MapData(const MapData& other) = default;
+			MapData& operator=(const MapData& other) = default;
+
+			bool isUsable() const;
 		};
 
 		struct MapIterator : public std::iterator<std::forward_iterator_tag, std::pair<ivec2, MapData&>>
 		{
 			MapIterator(Map& m);
-			void operator=(const MapIterator& other) { m = other.m; }
+			void operator=(const MapIterator& other) { m = other.m; p = other.p; }
 			void operator++() { if (++p.x >= m.width) { p.x = 0; ++p.y; } }
-			value_type operator*() { return std::make_pair(p, getR()); }
-			bool operator!=(const MapIterator& other) const { return !(p.x == other.p.x && p.y == other.p.y); }
+			value_type operator*() { return std::pair<ivec2, MapData&>(p, getR()); }
+			bool operator!=(const MapIterator& other) const { return !(p == other.p); }
+			bool operator==(const MapIterator& other) const { return p == other.p; }
 			MapData get();
 			MapData& getR();
 			ivec2 getPoint() { return p; };
@@ -68,23 +75,25 @@ namespace Kassiopeia
 		MapIterator end();
 
 		//Works out different partitions in the map
-		std::vector<int> partitionMap(bool considerPathsAsWalls = false);
+		std::vector<int> partitionMap(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
 
 		//Counts how many continous regions the map has
 		//Uses partitionMap()
-		int numberOfRegions();
+		int numberOfRegions(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
 
 		//True if the map has only one continous region
-		bool isMapContinuous();
+		bool isMapContinuous(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
 
-		std::string FindFillingPath();
+		typedef std::pair<bool, std::string> path_result_type;
+		//Finds a route starting at Kassiopeia that fills the whole map
+		path_result_type FindFillingPath();
 
 		int width, height;
 
 	private:
-		void updateAllInternalMarkers();
-		void updateAroundPoint(ivec2 p);
-		void updatePoint(ivec2 p);
+		void updateAllInternalMarkers(bool turtleIsWall = false);
+		void updateAroundPoint(ivec2 p, bool turtleIsWall = false);
+		void updatePoint(ivec2 p, bool turtleIsWall = false);
 
 		std::vector<MapData> mapData;
 		bool isMapInitialized;

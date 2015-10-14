@@ -8,6 +8,8 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	AllocConsole();
+	char* stdobuf = new char[4096];
+	setvbuf(stdout, stdobuf, _IOFBF, 4096);
 	freopen("CONOUT$", "w", stdout);
 	freopen("CONOUT$", "w", stderr);
 	freopen("CONIN$", "r", stdin);
