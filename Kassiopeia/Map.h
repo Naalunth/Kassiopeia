@@ -67,22 +67,22 @@ namespace Kassiopeia
 		MapData GetMap(ivec2 p) const;
 
 		//Get a reference to the map data at the specified coordinates
-		MapData& GetMapR(int x, int y);
+		MapData& GetMap(int x, int y);
 		//Get a reference to the map data at the specified coordinates
-		MapData& GetMapR(ivec2 p);
+		MapData& GetMap(ivec2 p);
 
 		MapIterator begin();
 		MapIterator end();
 
 		//Works out different partitions in the map
-		std::vector<int> partitionMap(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
+		std::vector<int> PartitionMap(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
 
 		//Counts how many continous regions the map has
-		//Uses partitionMap()
-		int numberOfRegions(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
+		//Uses PartitionMap()
+		int NumberOfRegions(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
 
 		//True if the map has only one continous region
-		bool isMapContinuous(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
+		bool IsMapContinuous(bool considerPathsAsWalls = false, bool considerTurtleAsWall = false);
 
 		typedef std::pair<bool, std::string> path_result_type;
 		//Finds a route starting at Kassiopeia that fills the whole map

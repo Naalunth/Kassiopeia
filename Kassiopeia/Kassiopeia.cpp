@@ -60,7 +60,7 @@ void Kassiopeia::Kassiopeia::run()
 			cout << std::endl;
 			break;
 		case 2:
-			cout << "Number of regions: " << map.numberOfRegions() << std::endl;
+			cout << "Number of regions: " << map.NumberOfRegions() << std::endl;
 			break;
 		case 3:
 			tmp_path = map.FindFillingPath();
@@ -99,6 +99,8 @@ void Kassiopeia::Kassiopeia::run()
 
 void Kassiopeia::Kassiopeia::transitionState(State next)
 {
+	State oldState = currentState;
+	currentState = next;
 	switch (next)
 	{
 	case CLOSING:
@@ -107,7 +109,7 @@ void Kassiopeia::Kassiopeia::transitionState(State next)
 		std::cout << "\n";
 		break;
 	case MAP_LOADED:
-		if (currentState == MAIN)
+		if (oldState == MAIN)
 		{
 			std::cout << "Enter the filename\n"
 				<< "> ";
@@ -115,17 +117,12 @@ void Kassiopeia::Kassiopeia::transitionState(State next)
 			std::string input;
 			std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			std::getline(std::cin, input);
-			try {
-				std::ifstream s{ input };
-				map.LoadMap(s);
-			} catch (std::exception ex) {
-				std::cerr << "Got an error while loading map: " << ex.what() << std::endl;
-				currentState = MAIN;
-				return;
-			}
+			bool properlyLoaded = false;
+			std::ifstream s{ input };
+			properlyLoaded = map.LoadMap(s);
+			if (!properlyLoaded) currentState = MAIN;
 			std::cout << "\n";
 		}
 		break;
 	}
-	currentState = next;
 }

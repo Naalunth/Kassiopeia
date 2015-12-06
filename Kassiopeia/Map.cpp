@@ -2,9 +2,6 @@
 
 #include "disjoint_set.h"
 
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -14,6 +11,7 @@
 #include <iostream>
 #include <set>
 #include <stack>
+#include <functional>
 
 
 Kassiopeia::Map::Map()
@@ -58,26 +56,21 @@ bool Kassiopeia::Map::LoadMap(std::istream& in)
 {
 	using std::string;
 	using std::vector;
-	using boost::lexical_cast;
 
 	if (!in.good())
 	{
-		throw std::exception("input stream invalid (the file you entered probably does not exist)");
+		std::cerr << "input stream invalid (the file you entered probably does not exist)";
+		return false;
 	}
 
 	try {
 		//read the maps dimensions and construct a map of specified size
 		{
-			string head;
-			vector<string> dimensions;
-			std::getline(in, head);
-			boost::split(dimensions, head, (int(__cdecl*)(int)) std::isspace, boost::token_compress_on);
-
-			height = lexical_cast<int>(dimensions[0]);
-			width = lexical_cast<int>(dimensions[1]);
-
+			in >> height >> width;
 			mapData.resize((size_t) height * width);
 		}
+
+		in.ignore(256, '\n');
 
 		//read the maps data
 		{
@@ -100,8 +93,7 @@ bool Kassiopeia::Map::LoadMap(std::istream& in)
 						tmp = { true, true, false };
 						break;
 					default:
-						//error here: the map contained some symbols the program could not understand
-						assert(false);
+						throw std::exception("the map contained some symbols the program could not understand");
 					}
 					SetMap(i, lineCounter, tmp);
 				}
@@ -138,14 +130,14 @@ Kassiopeia::Map::MapData Kassiopeia::Map::GetMap(ivec2 p) const
 	return GetMap(p.x, p.y);
 }
 
-Kassiopeia::Map::MapData& Kassiopeia::Map::GetMapR(int x, int y)
+Kassiopeia::Map::MapData& Kassiopeia::Map::GetMap(int x, int y)
 {
 	return mapData[y * width + x];
 }
 
-Kassiopeia::Map::MapData& Kassiopeia::Map::GetMapR(ivec2 p)
+Kassiopeia::Map::MapData& Kassiopeia::Map::GetMap(ivec2 p)
 {
-	return GetMapR(p.x, p.y);
+	return GetMap(p.x, p.y);
 }
 
 Kassiopeia::Map::MapIterator Kassiopeia::Map::begin()
@@ -163,10 +155,8 @@ Kassiopeia::Map::MapIterator Kassiopeia::Map::end()
 
 
 //Two-pass variation stolen from https://en.wikipedia.org/wiki/Connected-component_labeling
-std::vector<int> Kassiopeia::Map::partitionMap(bool considerPathsAsRegions, bool considerTurtleAsWall)
+std::vector<int> Kassiopeia::Map::PartitionMap(bool considerPathsAsRegions, bool considerTurtleAsWall)
 {
-	assert(isMapInitialized);
-
 	std::vector<int> regionlabels(width * height, -1);
 	auto getLabel = [this, &regionlabels](int x, int y)->int& {return regionlabels[y * width + x]; };
 	disjoint_set<int> labelset{};
@@ -216,17 +206,16 @@ std::vector<int> Kassiopeia::Map::partitionMap(bool considerPathsAsRegions, bool
 	return regionlabels;
 }
 
-
-int Kassiopeia::Map::numberOfRegions(bool considerPathsAsRegions, bool considerTurtleAsWall)
+int Kassiopeia::Map::NumberOfRegions(bool considerPathsAsRegions, bool considerTurtleAsWall)
 {
-	std::vector<int> regionlabels = partitionMap(considerPathsAsRegions, considerTurtleAsWall);
+	std::vector<int> regionlabels = PartitionMap(considerPathsAsRegions, considerTurtleAsWall);
 	std::sort(regionlabels.begin(), regionlabels.end());
 	return std::distance(regionlabels.begin(), std::unique(regionlabels.begin(), regionlabels.end())) - 1;
 }
 
-bool Kassiopeia::Map::isMapContinuous(bool considerPathsAsRegions, bool considerTurtleAsWall)
+bool Kassiopeia::Map::IsMapContinuous(bool considerPathsAsRegions, bool considerTurtleAsWall)
 {
-	return numberOfRegions(considerPathsAsRegions, considerTurtleAsWall) == 1;
+	return NumberOfRegions(considerPathsAsRegions, considerTurtleAsWall) == 1;
 }
 
 Kassiopeia::Map::path_result_type Kassiopeia::Map::FindFillingPath()
@@ -243,9 +232,9 @@ Kassiopeia::Map::path_result_type Kassiopeia::Map::FindFillingPath()
 
 	auto moveTurtle = [&](ivec2 newPosition)
 	{
-		GetMapR(turtleposition).isTurtle = false;
+		GetMap(turtleposition).isTurtle = false;
 		turtleposition = newPosition;
-		GetMapR(turtleposition).isTurtle = true;
+		GetMap(turtleposition).isTurtle = true;
 	};
 
 	updateAllInternalMarkers();
@@ -253,14 +242,14 @@ Kassiopeia::Map::path_result_type Kassiopeia::Map::FindFillingPath()
 	std::function<bool(Direction)> recursiveSearch = [&](Direction dir) -> bool
 	{
 		{ //move
-			if (dir != Direction::NONE) GetMapR(currentposition).isAlreadyVisited = true;
+			if (dir != Direction::NONE) GetMap(currentposition).isAlreadyVisited = true;
 			updateAroundPoint(currentposition);
 			currentposition = currentposition + DirectionVectorsWithNone[dir];
 			moveTurtle(currentposition);
 		}
 		auto rewind = [&]() {
 			currentposition = currentposition - DirectionVectorsWithNone[dir];
-			GetMapR(currentposition).isAlreadyVisited = false;
+			GetMap(currentposition).isAlreadyVisited = false;
 			updateAroundPoint(currentposition);
 			moveTurtle(currentposition);
 		};
@@ -275,13 +264,14 @@ Kassiopeia::Map::path_result_type Kassiopeia::Map::FindFillingPath()
 		if (printCounter == 1000000)
 			std::cout << "Seriously, just terminate this program already..." << std::endl;
 		if (printCounter == 10000000)
-			std::cout << "OK, it seems that you enjoy wasting your time watching me while I test all the possible permutations of paths on this one. (Also frying your CPU in the process.)" << std::endl;
+			std::cout << "OK, it seems you enjoy wasting your time watching me while I test all the possible permutations of paths on this one. I am sure you have got something better to do." << std::endl;
 		if(printStuff)
 		{
 			std::cout << "Testing:\n";
 			PrintMap();
 		}
 
+		//if there is no cell left to be visited, return true
 		if (std::find_if(begin(), end(), [](const MapIterator::value_type& d)->bool {
 			return d.second.isUsable() && !d.second.isTurtle;
 		}) == end())
@@ -290,13 +280,16 @@ Kassiopeia::Map::path_result_type Kassiopeia::Map::FindFillingPath()
 			return true;
 		}
 
+		//skip the search if there are too many dead ends
 		std::vector<MapIterator::value_type> deadEnds;
 		std::copy_if(begin(), end(), std::back_inserter(deadEnds), [](const MapIterator::value_type& d)->bool {return d.second.internal_isDeadEnd; });
 		if (deadEnds.size() > 2) goto label_skipSearch;
 		else if (deadEnds.size() == 2 && !(deadEnds[0].first == currentposition || deadEnds[1].first == currentposition)) goto label_skipSearch;
 
-		if (!isMapContinuous(false, true)) goto label_skipSearch;
+		//skip search if there is more than one cohesive region
+		if (!IsMapContinuous(false, true)) goto label_skipSearch;
 
+		//try to move K in every direction
 		for (auto d : Directions)
 		{
 			ivec2 v = currentposition + DirectionVectorsWithNone[d];
@@ -345,7 +338,7 @@ void Kassiopeia::Map::updatePoint(ivec2 point, bool turtleIsWall)
 	if (!in_range(point, { 0,0 }, { width - 1, height - 1 })) return;
 	if (!GetMap(point).isUsable())
 	{
-		MapData& d = GetMapR(point);
+		MapData& d = GetMap(point);
 		d.internal_isDeadEnd = false;
 		d.internal_isPath = false;
 		return;
@@ -359,8 +352,8 @@ void Kassiopeia::Map::updatePoint(ivec2 point, bool turtleIsWall)
 			|| (turtleIsWall && GetMap(point + DirectionVectors[d]).isTurtle) )
 			++walls;
 
-	GetMapR(point).internal_isPath = (walls >= 2);
-	GetMapR(point).internal_isDeadEnd = (walls == 3) && !(isVisited);
+	GetMap(point).internal_isPath = (walls >= 2);
+	GetMap(point).internal_isDeadEnd = (walls == 3) && !(isVisited);
 }
 
 
@@ -368,7 +361,7 @@ inline Kassiopeia::Map::MapIterator::MapIterator(Map & m) : m(m) { reset(); }
 
 inline Kassiopeia::Map::MapData Kassiopeia::Map::MapIterator::get() { return m.GetMap(p); }
 
-inline Kassiopeia::Map::MapData & Kassiopeia::Map::MapIterator::getR() { return m.GetMapR(p); }
+inline Kassiopeia::Map::MapData & Kassiopeia::Map::MapIterator::getR() { return m.GetMap(p); }
 
 inline bool Kassiopeia::Map::MapIterator::good() const { return p.y < m.height && p.x < m.width; }
 
